@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101512">
+<title>TMR Cue Studio</title>
+<style>
+:root{color-scheme:dark;--bg:#0c100e;--panel:#141b17;--panel2:#1a241e;--line:#2a3930;--text:#edf4ee;--muted:#9eafa3;--green:#8bd5a2;--green2:#254a34;--amber:#e6bd73;--red:#e58b82}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 20% -10%,#1b3023 0,transparent 42%),var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+main{max-width:980px;margin:auto;padding:28px 18px 56px}.top{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:24px}
+.brand{display:flex;align-items:center;gap:12px}.mark{width:42px;height:42px;border-radius:13px;background:linear-gradient(145deg,#a6e3b4,#427c56);display:grid;place-items:center;color:#0b160e;font-weight:900;font-size:20px}
+h1{font-size:22px;line-height:1.15;margin:0;letter-spacing:-.5px}.sub{color:var(--muted);font-size:12px;margin-top:4px}.pill{border:1px solid #365540;background:#17251b;color:#bce8c6;border-radius:99px;padding:5px 10px;font-size:11px;white-space:nowrap}
+.grid{display:grid;grid-template-columns:1.15fr .85fr;gap:16px}.panel{background:linear-gradient(180deg,#17201a,#121914);border:1px solid var(--line);border-radius:18px;padding:19px;box-shadow:0 12px 35px #0002}
+h2{font-size:15px;margin:0 0 5px;letter-spacing:.1px}.hint{font-size:12px;color:var(--muted);margin:0 0 14px}
+textarea,select{width:100%;background:#0d130f;border:1px solid #34463a;color:var(--text);border-radius:11px;padding:12px;font:inherit;outline:none}
+textarea{min-height:210px;resize:vertical;line-height:1.65}textarea:focus,select:focus{border-color:var(--green)}
+.smallrow{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:12px 0 7px}.count{color:var(--muted);font-size:12px}
+label{font-size:13px;color:#dce8de}.field{margin:16px 0}.value{font-variant-numeric:tabular-nums;color:var(--green);font-weight:650}
+input[type=range]{width:100%;accent-color:var(--green);margin:10px 0 0}
+select{padding:10px}.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.note{border:1px solid #5a492d;background:#211d14;color:#e9d7b5;padding:12px;border-radius:12px;font-size:12px;margin-top:14px}
+.controls{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px}
+button{border:1px solid #3a4b40;border-radius:11px;padding:10px 15px;background:#1a261e;color:var(--text);font:600 13px system-ui;cursor:pointer}
+button.primary{background:var(--green);color:#102016;border-color:var(--green)}button:disabled{opacity:.4;cursor:not-allowed}button:hover:not(:disabled){filter:brightness(1.1)}
+.status{margin-top:16px;background:#0d140f;border:1px solid var(--line);border-radius:13px;padding:13px}
+.statusline{display:flex;justify-content:space-between;gap:12px;font-size:12px;color:var(--muted)}.progress{height:6px;background:#253229;border-radius:9px;overflow:hidden;margin-top:10px}.bar{height:100%;width:0;background:var(--green);transition:width .2s}
+.sequence{margin-top:17px}.cue{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #26342b}.cue:last-child{border:0}.num{width:25px;height:25px;border-radius:8px;background:#24352a;color:#bce8c6;display:grid;place-items:center;font-size:11px}.word{flex:1;min-width:0;overflow-wrap:anywhere;font-size:13px}.duration{font-size:11px;color:var(--muted)}
+.footer{color:#84958a;font-size:11px;margin-top:20px;text-align:center}
+@media(max-width:740px){.grid{grid-template-columns:1fr}.top{align-items:flex-start}.panel{padding:16px}main{padding:20px 13px 40px}}
+</style>
+</head>
+<body>
+<main>
+  <header class="top">
+    <div class="brand"><div class="mark">T</div><div><h1>TMR Cue Studio</h1><div class="sub">Keyword-to-audio sequence builder</div></div></div>
+    <span class="pill">GITHUB PAGES · OFFLINE-READY</span>
+  </header>
+
+  <div class="grid">
+    <section class="panel">
+      <h2>1. Keyword list</h2>
+      <p class="hint">Enter one keyword or short phrase per line. Repeated entries are kept.</p>
+      <textarea id="keywords" spellcheck="false" placeholder="Photosynthesis&#10;Mitochondria&#10;ATP&#10;Cellular respiration"></textarea>
+      <div class="smallrow"><span class="count" id="count">0 keywords</span><button id="clear" type="button">Clear list</button></div>
+      <div class="field">
+        <label for="voice">Speech voice</label>
+        <select id="voice"><option value="">System default voice</option></select>
+        <p class="hint" style="margin:7px 0 0">Available voices depend on the browser and device.</p>
+      </div>
+      <div class="field">
+        <label for="rate">Speech rate <span class="value" id="rateVal">0.9×</span></label>
+        <input id="rate" type="range" min=".65" max="1.2" step=".05" value=".9">
+      </div>
+      <div class="controls">
+        <button class="primary" id="start">▶ Play sequence</button>
+        <button id="stop" disabled>■ Stop</button>
+        <button id="preview">Preview first keyword</button>
+      </div>
+      <div class="status" aria-live="polite">
+        <div class="statusline"><span id="statusText">Ready. Add keywords to begin.</span><span id="position">0 / 0</span></div>
+        <div class="progress"><div class="bar" id="bar"></div></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>2. Timing & sound</h2>
+      <p class="hint">These are fixed cue slots; adding keywords does not change their duration or spacing.</p>
+      <div class="field">
+        <div class="smallrow"><label for="cueDuration">Keyword slot duration</label><span class="value" id="cueVal">1.5 s</span></div>
+        <input id="cueDuration" type="range" min="1" max="2" step=".5" value="1.5">
+      </div>
+      <div class="field">
+        <div class="smallrow"><label for="gap">Gap between keyword slots</label><span class="value" id="gapVal">4.5 s</span></div>
+        <input id="gap" type="range" min="4" max="5" step=".5" value="4.5">
+      </div>
+      <div class="field">
+        <div class="smallrow"><label for="speechVol">Speech level (relative)</label><span class="value" id="speechVal">15%</span></div>
+        <input id="speechVol" type="range" min="1" max="30" step="1" value="15">
+      </div>
+      <div class="field">
+        <div class="smallrow"><label for="noiseVol">White-noise level (relative)</label><span class="value" id="noiseVal">5%</span></div>
+        <input id="noiseVol" type="range" min="0" max="15" step="1" value="5">
+      </div>
+      <div class="smallrow"><label>Background white noise</label><span class="value" id="noiseState">ON during sequence</span></div>
+      <div class="note"><strong>Sound-level note:</strong> The percentage controls are digital output settings, not dB SPL measurements. Actual ear-level dB depends on the phone, operating-system volume, headphones and fit. Do not treat these settings as proof that sound is below 40–45 dB or 35–38 dB. Use calibrated measurement equipment and adult/research-supervisor oversight for any participant testing.</div>
+    </section>
+  </div>
+
+  <section class="panel sequence">
+    <div class="smallrow"><div><h2>3. Sequence preview</h2><p class="hint" style="margin:3px 0 0">White noise remains on through the keyword slots and gaps.</p></div><button id="export">Export cue plan</button></div>
+    <div id="sequenceList"><p class="hint">Your keyword sequence will appear here.</p></div>
+  </section>
+  <div class="footer">Runs locally in your browser. No account, server, analytics or API key required.</div>
+</main>
+<script>
+(() => {
+ const $ = id => document.getElementById(id);
+ const els = {
+  keywords:$('keywords'), count:$('count'), voice:$('voice'), rate:$('rate'),
+  cue:$('cueDuration'), gap:$('gap'), speech:$('speechVol'), noise:$('noiseVol'),
+  status:$('statusText'), position:$('position'), bar:$('bar'), list:$('sequenceList')
+ };
+ let voices=[], running=false, index=0, timer=null, audioCtx=null, noiseSource=null, noiseGain=null;
+ let runToken=0;
+
+ function words(){return els.keywords.value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean)}
+ function updateCount(){
+  const n=words().length; els.count.textContent=`${n} keyword${n===1?'':'s'}`;
+  renderList();
+ }
+ function renderList(){
+  const arr=words();
+  if(!arr.length){els.list.innerHTML='<p class="hint">Your keyword sequence will appear here.</p>';return}
+  els.list.innerHTML=arr.map((w,i)=>`<div class="cue"><span class="num">${i+1}</span><span class="word"></span><span class="duration">${Number(els.cue.value).toFixed(1)} s slot</span></div>`).join('');
+  [...els.list.querySelectorAll('.word')].forEach((el,i)=>el.textContent=arr[i]);
+ }
+ function loadVoices(){
+  if(!('speechSynthesis' in window)){els.voice.innerHTML='<option>Speech synthesis unavailable</option>';return}
+  voices=speechSynthesis.getVoices();
+  const old=els.voice.value;
+  els.voice.innerHTML='<option value="">System default voice</option>';
+  voices.forEach((v,i)=>{const o=document.createElement('option');o.value=String(i);o.textContent=`${v.name} (${v.lang})`;els.voice.appendChild(o)});
+  if(old) els.voice.value=old;
+ }
+ function setStatus(msg){els.status.textContent=msg}
+ function updateProgress(){
+  const n=words().length;
+  els.position.textContent=`${Math.min(index,n)} / ${n}`;
+  els.bar.style.width=n?`${Math.min(index,n)/n*100}%`:'0%';
+ }
+ function setButtons(on){
+  running=on; $('start').disabled=on; $('stop').disabled=!on; $('preview').disabled=on;
+ }
+ function startNoise(){
+  try{
+   audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+   const length=audioCtx.sampleRate*2;
+   const buffer=audioCtx.createBuffer(1,length,audioCtx.sampleRate);
+   const data=buffer.getChannelData(0);
+   // Deterministic, gently filtered white noise; generated locally.
+   let last=0;
+   for(let i=0;i<length;i++){const white=Math.random()*2-1;last=.18*white+.82*last;data[i]=white*.72+last*.28}
+   noiseSource=audioCtx.createBufferSource();noiseSource.buffer=buffer;noiseSource.loop=true;
+   const filter=audioCtx.createBiquadFilter();filter.type='lowpass';filter.frequency.value=9000;
+   noiseGain=audioCtx.createGain();noiseGain.gain.value=Number(els.noise.value)/100;
+   noiseSource.connect(filter);filter.connect(noiseGain);noiseGain.connect(audioCtx.destination);
+   noiseSource.start();
+  }catch(e){setStatus('White noise unavailable in this browser. Speech may still work.')}
+ }
+ function stopNoise(){
+  try{if(noiseSource)noiseSource.stop()}catch(e){}
+  try{if(audioCtx)audioCtx.close()}catch(e){}
+  noiseSource=null;audioCtx=null;noiseGain=null;
+ }
+ function speak(text, token, duration){
+  if(!('speechSynthesis' in window)){setStatus('This browser does not support speech synthesis.');return}
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  const v=els.voice.value;
+  if(v!=='' && voices[Number(v)])u.voice=voices[Number(v)];
+  u.rate=Number(els.rate.value);u.volume=Number(els.speech.value)/100;
+  // Slot length is fixed. If speech runs long, cut it off at the slot boundary.
+  speechSynthesis.speak(u);
+  timer=setTimeout(()=>{if(token===runToken)speechSynthesis.cancel()},duration*1000);
+ }
+ function stopAll(message='Stopped.'){
+  runToken++; if(timer)clearTimeout(timer);timer=null;
+  if('speechSynthesis' in window)speechSynthesis.cancel();
+  stopNoise();setButtons(false);setStatus(message);
+ }
+ function runNext(token){
+  const arr=words(), duration=Number(els.cue.value), gap=Number(els.gap.value);
+  if(token!==runToken)return;
+  if(index>=arr.length){
+   stopNoise();setButtons(false);setStatus('Sequence complete.');updateProgress();return;
+  }
+  const current=index;setStatus(`Playing keyword ${current+1}: ${arr[current]}`);
+  updateProgress();speak(arr[current],token,duration);
+  timer=setTimeout(()=>{
+   if(token!==runToken)return;
+   speechSynthesis.cancel();index++;updateProgress();
+   if(index>=arr.length){stopNoise();setButtons(false);setStatus('Sequence complete.');return}
+   setStatus(`Gap · ${gap.toFixed(1)} seconds`);
+   timer=setTimeout(()=>runNext(token),gap*1000);
+  },duration*1000);
+ }
+ function start(){
+  const arr=words();if(!arr.length){setStatus('Add at least one keyword first.');return}
+  if(!('speechSynthesis' in window)){setStatus('Speech synthesis is not supported by this browser.');return}
+  stopAll('Preparing sequence…');const token=runToken;index=0;updateProgress();setButtons(true);
+  startNoise();
+  if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume();
+  runNext(token);
+ }
+ $('start').addEventListener('click',start);
+ $('stop').addEventListener('click',()=>stopAll());
+ $('preview').addEventListener('click',()=>{
+  const w=words()[0];if(!w){setStatus('Add a keyword first.');return}
+  speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(w);u.rate=Number(els.rate.value);u.volume=Number(els.speech.value)/100;
+  const v=els.voice.value;if(v!==''&&voices[Number(v)])u.voice=voices[Number(v)];
+  speechSynthesis.speak(u);setStatus(`Previewing: ${w}`);
+ });
+ $('clear').addEventListener('click',()=>{els.keywords.value='';updateCount();setStatus('Keyword list cleared.')});
+ els.keywords.addEventListener('input',updateCount);
+ els.cue.addEventListener('input',()=>{$('cueVal').textContent=`${Number(els.cue.value).toFixed(1)} s`;renderList()});
+ els.gap.addEventListener('input',()=>$('gapVal').textContent=`${Number(els.gap.value).toFixed(1)} s`);
+ els.rate.addEventListener('input',()=>$('rateVal').textContent=`${Number(els.rate.value).toFixed(2)}×`);
+ els.speech.addEventListener('input',()=>$('speechVal').textContent=`${els.speech.value}%`);
+ els.noise.addEventListener('input',()=>{
+  $('noiseVal').textContent=`${els.noise.value}%`;
+  if(noiseGain&&audioCtx)noiseGain.gain.setTargetAtTime(Number(els.noise.value)/100,audioCtx.currentTime,.04);
+ });
+ $('export').addEventListener('click',()=>{
+  const arr=words();if(!arr.length){setStatus('Add keywords before exporting.');return}
+  const data={app:'TMR Cue Studio',version:'1.0',createdAt:new Date().toISOString(),
+   method:'Browser text-to-speech',keywords:arr,
+   cueSlotSeconds:Number(els.cue.value),gapSeconds:Number(els.gap.value),
+   speechRate:Number(els.rate.value),speechOutputPercent:Number(els.speech.value),
+   whiteNoiseOutputPercent:Number(els.noise.value),
+   note:'Output percentages are not calibrated dB SPL. Browser/system voices may vary.'};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='tmr-cue-plan.json';a.click();URL.revokeObjectURL(a.href);
+ });
+ if('speechSynthesis' in window){loadVoices();speechSynthesis.onvoiceschanged=loadVoices}
+ updateCount();
+})();
+</script>
+</body>
+</html>
